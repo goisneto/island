@@ -100,7 +100,7 @@ if [ -n "${NGROK_TOKEN}" ] || [ -n "${ZEROTIER_NETWORKID}" ]; then
     AllowAgentForwarding yes
     AllowTcpForwarding yes
     X11UseLocalhost yes
-    EOF
+EOF
     ufw allow ssh
 
     ch_action "Restarting SSHd" $?
