@@ -1,0 +1,339 @@
+name: Android CI
+
+on:
+
+  workflow_call:
+
+  workflow_dispatch:
+
+  push:
+
+    branches: [ "main" ]
+
+  pull_request:
+
+    branches: [ "main" ]
+
+    
+
+env:
+
+  app-name: Island
+
+  target: aarch64-linux-android
+
+  binstall-args: --no-confirm --no-symlinks
+
+  cache-name: cache
+
+  
+
+jobs:
+
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+
+    
+
+    - uses: actions/checkout@v3
+
+    
+
+    - name: Find Grandle Directories
+
+      shell: bash {0}
+
+      run: |
+
+        find ~/ -type f -name 'gradlew' -exec bash -c 'dir=$(dirname $0); [ -f "${dir}/gradle.properties" ] && [ -f "${dir}/build.gradle" ] && [ -f "${dir}/settings.gradle" ] && echo $dir || false' {} \; -quit | ( xargs -r -I@ echo 'GRANDLE_WORK_DIR=@' >> $GITHUB_ENV )
+
+        . $GITHUB_ENV
+
+        if [[ ! -n "${GRANDLE_WORK_DIR}" ]]; then
+
+          echo GRANDLE_WORK_DIR=/not-found >> $GITHUB_ENV
+
+          echo GRANDLE_APP_DIR=/not-found >> $GITHUB_ENV
+
+        else
+
+          find ${GRANDLE_WORK_DIR} -mindepth 2 -type f -name 'build.gradle' -print -quit | ( xargs -r -I@ bash -c 'echo "GRANDLE_APP_DIR=$(dirname @)"' >> $GITHUB_ENV )
+
+          . $GITHUB_ENV
+
+          if [[ ! -n "${GRANDLE_APP_DIR}" ]]; then
+
+            echo GRANDLE_APP_DIR=/not-found >> $GITHUB_ENV
+
+          fi
+
+        fi
+
+        . $GITHUB_ENV
+
+        echo GRANDLE_WORK_DIR=${GRANDLE_WORK_DIR}
+
+        echo GRANDLE_APP_DIR=${GRANDLE_APP_DIR}
+
+        
+
+    - name: Cache
+
+      id: cache
+
+      uses: actions/cache@v3
+
+      with:
+
+        key: ${{ env.cache-name }}-${{ runner.os }}-${{ runner.arch }}-${{ github.job }}-${{ env.target }}
+
+        path: |
+
+          ~/
+
+          !${{ env.GRANDLE_WORK_DIR }}/assets
+
+          !${{ env.GRANDLE_APP_DIR }}/assets
+
+          !${{ env.GRANDLE_WORK_DIR }}/.*
+
+          !${{ env.GRANDLE_APP_DIR }}/.*
+
+          !${{ env.GRANDLE_WORK_DIR }}/*.*
+
+          !${{ env.GRANDLE_APP_DIR }}/*.*
+
+          !${{ env.GRANDLE_APP_DIR }}/src
+
+          !${{ env.GRANDLE_APP_DIR }}/rs/src
+
+          !${{ env.GRANDLE_APP_DIR }}/lib
+
+          !${{ env.GRANDLE_APP_DIR }}/rs/.*
+
+          !${{ env.GRANDLE_APP_DIR }}/rs/*.*
+
+          ${{ env.GRANDLE_APP_DIR }}/lint-baseline.xml
+
+          ${{ env.GRANDLE_APP_DIR }}/src/main/assets
+
+          
+
+    - name: Update Grandle JVM Memory
+
+      shell: bash {0}
+
+      run: |
+
+        free -m | head -n-1 | tail -n-1 | xargs -r | cut -d' ' -f2 | xargs bash -c 'echo MEMTOTAL=$0' >> $GITHUB_ENV
+
+        . $GITHUB_ENV
+
+        MEMPERM=$(( ${MEMTOTAL} / $( nproc --all ) ))
+
+        echo "MEMPERM="'"'"${MEMPERM}"'"' >> $GITHUB_ENV
+
+        . $GITHUB_ENV
+
+        sed -i "s/-Xmx[0-9]*(g|m|k)/-Xmx${MEMTOTAL}m/g" ${{ env.GRANDLE_WORK_DIR }}/gradle.properties
+
+        sed -i "s/-XX:MaxPermSize=[0-9]*(g|m|k)/-XX:MaxPermSize=${MEMPERM}m/g" ${{ env.GRANDLE_WORK_DIR }}/gradle.properties
+
+        echo "./gradle.properties updated:"
+
+        grep 'org.gradle.jvmargs=' ${{ env.GRANDLE_WORK_DIR }}/gradle.properties
+
+        
+
+    - name: Setup JDK
+
+      uses: actions/setup-java@v3
+
+      with:
+
+        java-version: '17'
+
+        distribution: 'temurin'
+
+        cache: gradle
+
+        
+
+    - name: Setup NDK
+
+      uses: nttld/setup-ndk@v1
+
+      with:
+
+        ndk-version: r25b
+
+        local-cache: true
+
+        
+
+    - name: Cargo Setup toolchain action to ${{ env.target }}
+
+      uses: actions-rs/toolchain@v1
+
+      with:
+
+        toolchain: nightly
+
+        target: ${{ env.target }}
+
+        override: true
+
+        
+
+    - name: Rustup add ${{ env.target }} and Cargo install cargo-binstall
+
+      shell: bash {0}
+
+      run: |
+
+        rustup target add ${{ env.target }}
+
+        [ -f $HOME/.cargo/bin/cargo-binstall ] && exit 0
+
+        wget -q https://github.com/cargo-bins/cargo-binstall/releases/latest/download/cargo-binstall-x86_64-unknown-linux-musl.tgz
+
+        [ ! -d $HOME/.cargo/bin ] && mkdir -p $HOME/.cargo/bin
+
+        tar -xf cargo-binstall-x86_64-unknown-linux-musl.tgz -C $HOME/.cargo/bin
+
+        rm cargo-binstall-x86_64-unknown-linux-musl.tgz
+
+        #cargo install cargo-binstall
+
+        
+
+    - name: Cargo binstall cargo-update cross cargo-xdk
+
+      run: cargo binstall ${{ env.binstall-args }} cargo-update cross cargo-xdk
+
+      
+
+    - name: Cargo Update
+
+      continue-on-error: true
+
+      run: cargo install-update -a
+
+      
+
+    - name: Grant execute permission for gradlew
+
+      run: |
+
+        cd "${{ env.GRANDLE_WORK_DIR }}"
+
+        chmod +x gradlew
+
+      
+
+    - name: Perform prebuild executions
+
+      shell: bash {0}
+
+      run: |
+
+        . $GITHUB_ENV
+
+        if [[ ! -x "${GRANDLE_WORK_DIR}/pre-build.sh" ]] &&  [[ ! -x "${GRANDLE_APP_DIR}/pre-build.sh" ]]; then
+
+        echo "${GRANDLE_WORK_DIR}/pre-build.sh and/or ${GRANDLE_APP_DIR}/pre-build.sh executable(s) not found..."
+
+        else
+
+                if [[ -x "${GRANDLE_WORK_DIR}/pre-build.sh" ]]; then
+
+                        echo "Running ${GRANDLE_WORK_DIR}/pre-build.sh"
+
+                        . "${GRANDLE_WORK_DIR}/pre-build.sh"
+
+                        echo "Done ${GRANDLE_WORK_DIR}/pre-build.sh"
+
+                fi
+
+                if [[ -x "${GRANDLE_APP_DIR}/pre-build.sh" ]]; then
+
+                        echo "Running ${GRANDLE_APP_DIR}/pre-build.sh"
+
+                        . "${GRANDLE_APP_DIR}/pre-build.sh"
+
+                        echo "Done ${GRANDLE_APP_DIR}/pre-build.sh"
+
+                fi
+
+        fi
+
+        
+
+    - name: Build with Gradle
+
+      run: |
+
+        cd "${{ env.GRANDLE_WORK_DIR }}"
+
+        ./gradlew wrapper --gradle-version=7.5.1
+
+        ./gradlew clean
+
+        rm -rf build
+
+        ./gradlew --build-cache build -Prust-target=arm64
+
+        ./gradlew --build-cache assembleRelease -Prust-target=arm64
+
+        ./gradlew --build-cache assembleDebug -Prust-target=arm64
+
+        
+
+    - name: Find Apk
+
+      shell: bash {0}
+
+      run: |
+
+        find ${{ env.GRANDLE_WORK_DIR }} -type d -name 'apk' | xargs -r -I@ find @ -type d -name 'debug' -print -quit | xargs -r -I@ find @ -type f -name '*.apk' | ( xargs -r -I@ echo 'DEBUGAPK=@' >> $GITHUB_ENV )
+
+        find ${{ env.GRANDLE_WORK_DIR }} -type d -name 'apk' | xargs -r -I@ find @ -type d -name 'release' -print -quit | xargs -r -I@ find @ -type f -name '*.apk' | ( xargs -r -I@ echo 'RELEASEAPK=@' >> $GITHUB_ENV )
+
+        . $GITHUB_ENV
+
+        [[ ! -n "${DEBUGAPK}" ]] && echo DEBUGAPK=/not-found >> $GITHUB_ENV
+
+        [[ ! -n "${RELEASEAPK}" ]] && echo RELEASEAPK=/not-found >> $GITHUB_ENV
+
+        . $GITHUB_ENV
+
+        echo DEBUGAPK=${DEBUGAPK}
+
+        echo RELEASEAPK=${RELEASEAPK}
+
+        
+
+    - name: Build Artifacts ${{ env.app-name }}-release.apk
+
+      uses: actions/upload-artifact@v3
+
+      with:
+
+        name: ${{ env.app-name }}.apk RELEASE
+
+        path: ${{ env.RELEASEAPK }}
+
+        
+
+    - name: Build Artifacts ${{ env.app-name }}-debug.apk
+
+      uses: actions/upload-artifact@v3
+
+      with:
+
+        name: ${{ env.app-name }}.apk DEBUG
+
+        path: ${{ env.DEBUGAPK }}
