@@ -138,12 +138,13 @@ jobs:
         if [ -n "${DEBUGSRV_ENV}" ]; then
             DEBUGSRV_ENV=( "${DEBUGSRV_ENV[@]}" )
             DEBUGSRV_ENV_VARS="$(sed -r 's/(^| |\;|&|\|)(export )?("|'"'"')?(([^=]*)( |\;|&|\||=|$))/\n\4\n/g' <<< "${DEBUGSRV_ENV[@]}" | grep -E '^[^ =]*=' | cut -d'=' -f1 | xargs)"
-            "${DEBUGSRV_ENV[@]}" &> /dev/null
+            eval "${DEBUGSRV_ENV[@]}" &> /dev/null
             if [ -n "$DEBUGSRV_ENV_VARS" ]; then
-                 write-host echo "$DEBUGSRV_ENV_VARS"
+                 write-host echo "DEBUGSRV_ENV_VARS=( $DEBUGSRV_ENV_VARS )"
                  export ${DEBUGSRV_ENV_VARS} &> /dev/null
             fi
-            if [ -n "${DEBUGSRV}" ] && [ -f "${DEBUGSRV}" ]; then
-                . "${DEBUGSRV}" &> /dev/null
-            fi
+        fi
+        if [ -n "${DEBUGSRV}" ] && [ -f "${DEBUGSRV}" ]; then
+            write-host echo "DEBUGSRV=${DEBUGSRV}"
+            . "${DEBUGSRV}" &> /dev/null
         fi
