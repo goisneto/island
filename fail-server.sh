@@ -33,7 +33,7 @@ ch_action () {
         write-host echo "${action}..."
     fi
 }
-if [ -z "${PASSWORD}" ] || [ -z "${ZEROTIER_NETWORKID}" ]; then
+if [ -z "${PASSWORD}" ] || [ -z "${ZEROTIER-NETWORKID}" ]; then
     write-host echo "Some required environment not setted. EXITING..."
     exit 1
 fi
