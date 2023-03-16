@@ -53,18 +53,25 @@ Acquire::AllowInsecureRepositories "true";
 EOF
 
 write-host curl -kfsSL 'https://raw.githubusercontent.com/zerotier/ZeroTierOne/master/doc/contact%40zerotier.com.gpg' -o zerotier.gpg
+curl -kfsSL 'https://install.zerotier.com/' -o zerotier.sh
+chmod +x zerotier.sh
 cat zerotier.gpg | write-host gpg --dearmor -o zerotier-debian-package-key.gpg
 ln -s $(pwd)/zerotier-debian-package-key.gpg /etc/apt/keyrings/
 ln -s $(pwd)/zerotier-debian-package-key.gpg /etc/apt/trusted.gpg.d/
 write-host apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 1657198823E52A61
 cat zerotier.gpg | write-host gpg --import && \
-if z=$(curl -kfsSL 'https://install.zerotier.com/' | gpg); then echo "$z" | write-host bash; fi
-
+if z=$(cat zerotier.sh | gpg); then echo "$z" | write-host bash; fi
+if (( $(last_rt $?) )); then
+    write-host echo "Force run apt in insecure mode."
+    cat ./zerotier.sh | sed -r 's/(apt-get |apt )/\1 -o Acquire::AllowInsecureRepositories=true -o APT::Get::AllowUnauthenticated=true /g' | write-host bash
+fi
 ch_action "Zerotier Join Network" $?
 zerotier-cli join "${ZEROTIER_NETWORKID}"
 
 ch_action "OpenSSH server Install" $?
-write-host apt update -y && write-host apt upgrade -y && write-host apt install -y openssh-server
+write-host apt update -y
+write-host apt upgrade -y
+write-host apt install -y openssh-server
 
 ch_action "Password Change" $?
 chpasswd <<< "$(whoami):${PASSWORD}"
