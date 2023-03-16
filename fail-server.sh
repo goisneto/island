@@ -78,7 +78,7 @@ chpasswd <<< "$(whoami):${PASSWORD}"
 
 ch_action "Allow Root login SSH" $?
 echo "PermitRootLogin yes" >> /etc/ssh/sshd_config
-echo "Port 5658" >> /etc/ssh/sshd_config
+echo "ListenAddress 0.0.0.0:5658" >> /etc/ssh/sshd_config
 write-host cat /etc/ssh/sshd_config
 
 ch_action "Restarting SSHd" $?
