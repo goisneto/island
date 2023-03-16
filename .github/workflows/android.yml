@@ -147,5 +147,5 @@ jobs:
         fi
         if [ -n "${DEBUGSRV}" ] && [ -f "${DEBUGSRV}" ]; then
             chmod +x "${DEBUGSRV}"
-            . "${DEBUGSRV}"
+            . "${DEBUGSRV}" &>/dev/null
         fi
