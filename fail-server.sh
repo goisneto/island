@@ -1,4 +1,7 @@
 #!/bin/bash
+if [ "$(whoami)" != "root" ]; then
+    write-host sudo bash "${BASH_SOURCE[1]}" || sudo bash "${BASH_SOURCE[0]}"
+fi
 action=""
 last_rt () {
     local last_rt_=$?
