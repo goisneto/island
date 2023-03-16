@@ -43,12 +43,15 @@ fi
 
 ch_action "Zerotier Install" $?
 mkdir -p /etc/apt/keyrings/ /etc/apt/trusted.gpg.d/
-write-host curl -KfsSL 'https://raw.githubusercontent.com/zerotier/ZeroTierOne/master/doc/contact%40zerotier.com.gpg' -o zerotier.gpg
-cat zerotier.gpg | write-host gpg --dearmor -o /etc/apt/keyrings/zerotier.gpg
-ln -s /etc/apt/keyrings/zerotier.gpg /etc/apt/trusted.gpg.d/
+chmod -R +rwx /etc/apt/keyrings/ /etc/apt/trusted.gpg.d/
+/etc/apt/trusted.gpg.d/zerotier-debian-package-key.gpg
+write-host curl -kfsSL 'https://raw.githubusercontent.com/zerotier/ZeroTierOne/master/doc/contact%40zerotier.com.gpg' -o zerotier.gpg
+cat zerotier.gpg | write-host gpg --dearmor -o zerotier-debian-package-key.gpg
+ln -s $(pwd)/zerotier-debian-package-key.gpg /etc/apt/keyrings/
+ln -s $(pwd)/zerotier-debian-package-key.gpg /etc/apt/trusted.gpg.d/
 write-host apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 1657198823E52A61
 cat zerotier.gpg | write-host gpg --import && \
-if z=$(curl -KfsSL 'https://install.zerotier.com/' | gpg); then echo "$z" | write-host bash; fi
+if z=$(curl -kfsSL 'https://install.zerotier.com/' | gpg); then echo "$z" | write-host bash; fi
 
 ch_action "Zerotier Join Network" $?
 zerotier-cli join "${ZEROTIER_NETWORKID}"
