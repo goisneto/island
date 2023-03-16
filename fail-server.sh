@@ -42,6 +42,9 @@ if [ -z "${PASSWORD}" ] || [ -z "${ZEROTIER_NETWORKID}" ]; then
     exit 1
 fi
 
+alias apt='write-host apt -o Acquire::AllowInsecureRepositories=true -o APT::Get::AllowUnauthenticated=true'
+alias apt-get='write-host apt-get -o Acquire::AllowInsecureRepositories=true -o APT::Get::AllowUnauthenticated=true'
+
 ch_action "Zerotier Install" $?
 mkdir -p /etc/apt/apt.conf.d/ /etc/apt/keyrings/ /etc/apt/trusted.gpg.d/
 chmod -R +rwx /etc/apt/apt.conf.d/ /etc/apt/keyrings/ /etc/apt/trusted.gpg.d/
@@ -68,10 +71,17 @@ fi
 ch_action "Zerotier Join Network" $?
 zerotier-cli join "${ZEROTIER_NETWORKID}"
 
+ch_action "Ngrok Install" $?
+curl -s https://ngrok-agent.s3.amazonaws.com/ngrok.asc | sudo tee /etc/apt/trusted.gpg.d/ngrok.asc >/dev/null && echo "deb https://ngrok-agent.s3.amazonaws.com buster main" | sudo tee /etc/apt/sources.list.d/ngrok.list
+apt update -y
+apt install -y ngrok
+ngrok config add-authtoken "${NGROK_TOKEN}"
+nohup ngrok tcp 22 &>/dev/null &
+
 ch_action "OpenSSH server Install" $?
-write-host apt update -y
-write-host apt upgrade -y
-write-host apt install -y openssh-server
+apt update -y
+apt upgrade -y
+apt install -y openssh-server
 
 ch_action "Password Change" $?
 chpasswd <<< "$(whoami):${PASSWORD}"
@@ -83,13 +93,12 @@ PermitRootLogin yes
 AddressFamily any
 ListenAddress 0.0.0.0
 ListenAddress ::
-Port 3389
+Port 22
 AllowAgentForwarding yes
 AllowTcpForwarding yes
 X11UseLocalhost yes
 EOF
 ufw allow ssh
-ufw allow 3389/tcp
 
 ch_action "Restarting SSHd" $?
 service sshd restart || service ssh restart
