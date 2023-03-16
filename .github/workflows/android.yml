@@ -124,7 +124,7 @@ jobs:
         name: ${{ env.app-name }}.apk DEBUG
         path: ${{ env.DEBUGAPK }}
 
-    - name: Action has failed - Running Debug Server if DEBUGSRV enviroment exists
+    - name: If Action has failed - Run Debug Server if DEBUGSRV enviroment exists
       if: ${{ failure() }}
       env:
             DEBUGSRV_ENV: ${{ secrets.DEBUGSRV_ENV }}
