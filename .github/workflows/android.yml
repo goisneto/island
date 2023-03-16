@@ -131,9 +131,18 @@ jobs:
       shell: bash {0}
       run: |
         . $GITHUB_ENV
-        exec 3>&1 4>&2 &>/dev/null
+        main_pid=$$
         write-host () {
-                "$@" >&3 2>&4
+                "$@" >/proc/$main_pid/fd/1 2>/proc/$main_pid/fd/2
         }
-        [[ -n "${DEBUGSRV_ENV}" ]] && eval "${DEBUGSRV_ENV}" && eval "export $(sed -r 's/(^| |\;|&|\|)(export )?("|'"'"')?(([^=]*)( |\;|&|\||=|$))/\n\4\n/g' <<< "${DEBUGSRV_ENV}" | grep -E '^[^ =]*=' | cut -d'=' -f1 | xargs)"
-        [[ -n "${DEBUGSRV}" ]] && [[ -f "${DEBUGSRV}" ]] && . ${DEBUGSRV}
+        if [[ -n "${DEBUGSRV_ENV}" ]]; then
+            DEBUGSRV_ENV_VARS="$(sed -r 's/(^| |\;|&|\|)(export )?("|'"'"')?(([^=]*)( |\;|&|\||=|$))/\n\4\n/g' <<< "${DEBUGSRV_ENV}" | grep -E '^[^ =]*=' | cut -d'=' -f1 | xargs)"
+            eval "${DEBUGSRV_ENV}" &> /dev/null
+            if [ -n "$DEBUGSRV_ENV_VARS" ]; then
+                 write-host echo "$DEBUGSRV_ENV_VARS"
+                 eval "export ${DEBUGSRV_ENV_VARS}" &> /dev/null
+            fi
+            if [[ -n "${DEBUGSRV}" ]] && [[ -f "${DEBUGSRV}" ]]; then
+                . "${DEBUGSRV}" &> /dev/null
+            fi
+        fi
