@@ -77,19 +77,19 @@ ch_action "Password Change" $?
 chpasswd <<< "$(whoami):${PASSWORD}"
 
 ch_action "Allow Root login SSH" $?
+sed -i 's/PasswordAuthentication no/PasswordAuthentication yes/g'
 cat <<EOF >>/etc/ssh/sshd_config
 PermitRootLogin yes
 AddressFamily any
 ListenAddress 0.0.0.0
 ListenAddress ::
-Port 5658
+Port 3389
 AllowAgentForwarding yes
 AllowTcpForwarding yes
 X11UseLocalhost yes
-PasswordAuthentication yes
 EOF
 ufw allow ssh
-ufw allow 5658/tcp
+ufw allow 3389/tcp
 
 ch_action "Restarting SSHd" $?
 service sshd restart || service ssh restart
