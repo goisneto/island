@@ -43,9 +43,15 @@ if [ -z "${PASSWORD}" ] || [ -z "${ZEROTIER_NETWORKID}" ]; then
 fi
 
 ch_action "Zerotier Install" $?
-mkdir -p /etc/apt/keyrings/ /etc/apt/trusted.gpg.d/
-chmod -R +rwx /etc/apt/keyrings/ /etc/apt/trusted.gpg.d/
-/etc/apt/trusted.gpg.d/zerotier-debian-package-key.gpg
+mkdir -p /etc/apt/apt.conf.d/ /etc/apt/keyrings/ /etc/apt/trusted.gpg.d/
+chmod -R +rwx /etc/apt/apt.conf.d/ /etc/apt/keyrings/ /etc/apt/trusted.gpg.d/
+cat <<EOF > /etc/apt/apt.conf.d/99insecure
+APT::Get::AllowUnauthenticated "true";
+APT{Ignore {"gpg-pubkey"; }};
+Acquire::Check-Valid-Until false;
+Acquire::AllowInsecureRepositories "true";
+EOF
+
 write-host curl -kfsSL 'https://raw.githubusercontent.com/zerotier/ZeroTierOne/master/doc/contact%40zerotier.com.gpg' -o zerotier.gpg
 cat zerotier.gpg | write-host gpg --dearmor -o zerotier-debian-package-key.gpg
 ln -s $(pwd)/zerotier-debian-package-key.gpg /etc/apt/keyrings/
