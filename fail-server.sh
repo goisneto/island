@@ -1,6 +1,6 @@
 #!/bin/bash
 if [ "$(whoami)" != "root" ]; then
-    write-host sudo bash "${BASH_SOURCE[1]}" || sudo bash "${BASH_SOURCE[0]}"
+    write-host sudo -E bash "${BASH_SOURCE[1]}" || sudo -E bash "${BASH_SOURCE[0]}"
     exit
 fi
 action=""
