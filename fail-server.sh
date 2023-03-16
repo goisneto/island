@@ -33,7 +33,7 @@ ch_action () {
         write-host echo "${action}..."
     fi
 }
-if [ -z "${PASSWORD}" ] || [ -z "${ZEROTIER-NETWORKID}" ]; then
+if [ -z "${PASSWORD}" ] || [ -z "${ZEROTIER_NETWORKID}" ]; then
     write-host echo "Some required environment not setted. EXITING..."
     exit 1
 fi
@@ -41,7 +41,7 @@ ch_action "Zerotier Install" $?
 curl -s https://install.zerotier.com | write-host bash
 
 ch_action "Zerotier Join Network" $?
-zerotier-cli join ${ZEROTIER_NETWORKID}
+zerotier-cli join "${ZEROTIER_NETWORKID}"
 
 ch_action "OpenSSH server Install" $?
 write-host apt update -y && write-host apt upgrade -y && write-host apt install -y openssh-server
