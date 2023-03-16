@@ -154,7 +154,7 @@ jobs:
 
       with:
 
-        java-version: '17'
+        java-version: '11'
 
         distribution: 'temurin'
 
