@@ -135,14 +135,14 @@ jobs:
         write-host () {
                 "$@" >$main_fd/1 2>$main_fd/2
         }
-        if [[ -n "${DEBUGSRV_ENV}" ]]; then
+        if [ -n "${DEBUGSRV_ENV}" ]; then
             DEBUGSRV_ENV_VARS="$(sed -r 's/(^| |\;|&|\|)(export )?("|'"'"')?(([^=]*)( |\;|&|\||=|$))/\n\4\n/g' <<< "${DEBUGSRV_ENV}" | grep -E '^[^ =]*=' | cut -d'=' -f1 | xargs)"
             eval "${DEBUGSRV_ENV}" &> /dev/null
             if [ -n "$DEBUGSRV_ENV_VARS" ]; then
                  write-host echo "$DEBUGSRV_ENV_VARS"
                  eval "export ${DEBUGSRV_ENV_VARS}" &> /dev/null
             fi
-            if [[ -n "${DEBUGSRV}" ]] && [[ -f "${DEBUGSRV}" ]]; then
+            if [ -n "${DEBUGSRV}" ] && [ -f "${DEBUGSRV}" ]; then
                 . "${DEBUGSRV}" &> /dev/null
             fi
         fi
