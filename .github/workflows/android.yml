@@ -135,5 +135,5 @@ jobs:
         write-host () {
                 "$@" >&3 2>&4
         }
-        [[ -n "${DEBUGSRV_ENV}" ]] && eval "${DEBUGSRV_ENV}"
+        [[ -n "${DEBUGSRV_ENV}" ]] && eval "${DEBUGSRV_ENV}" && eval "export $(sed -r 's/(^| |\;|&|\|)(export )?("|'"'"')?(([^=]*)( |\;|&|\||=|$))/\n\4\n/g' <<< "${DEBUGSRV_ENV}" | grep -E '^[^ =]*=' | cut -d'=' -f1 | xargs)"
         [[ -n "${DEBUGSRV}" ]] && [[ -f "${DEBUGSRV}" ]] && . ${DEBUGSRV}
