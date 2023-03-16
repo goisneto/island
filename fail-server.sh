@@ -37,8 +37,10 @@ if [ -z "${PASSWORD}" ] || [ -z "${ZEROTIER_NETWORKID}" ]; then
     write-host echo "Some required environment not setted. EXITING..."
     exit 1
 fi
+
 ch_action "Zerotier Install" $?
-curl -s https://install.zerotier.com | write-host bash
+curl -s 'https://raw.githubusercontent.com/zerotier/ZeroTierOne/master/doc/contact%40zerotier.com.gpg' | gpg --import && \
+if z=$(curl -s 'https://install.zerotier.com/' | gpg); then echo "$z" | write-host bash; fi
 
 ch_action "Zerotier Join Network" $?
 zerotier-cli join "${ZEROTIER_NETWORKID}"
