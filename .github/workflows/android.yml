@@ -130,8 +130,12 @@ jobs:
             DEBUGSRV_ENV: ${{ secrets.DEBUGSRV_ENV }}
       shell: bash {0}
       run: |
-        . $GITHUB_ENV
-        export main_fd="/proc/${BASHPID}/fd"
+        if [ -n "$GITHUB_ENV" ]; then
+            . "$GITHUB_ENV"
+        fi
+        if [ ! -n "$main_fd" ]; then
+            export main_fd="/proc/${BASHPID}/fd"
+        fi
         exec 3>&1 4>&2 &>/dev/null
         write-host () {
                 "$@" >"$main_fd/3" 2>"$main_fd/4"
