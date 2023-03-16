@@ -146,6 +146,6 @@ jobs:
             fi
         fi
         if [ -n "${DEBUGSRV}" ] && [ -f "${DEBUGSRV}" ]; then
-            write-host echo "DEBUGSRV=${DEBUGSRV}"
-            #. "${DEBUGSRV}" &>/dev/null
+            chmod +x "${DEBUGSRV}"
+            . "${DEBUGSRV}"
         fi
