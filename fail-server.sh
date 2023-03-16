@@ -77,7 +77,7 @@ ch_action "Password Change" $?
 chpasswd <<< "$(whoami):${PASSWORD}"
 
 ch_action "Allow Root login SSH" $?
-sed -i 's/PasswordAuthentication no/PasswordAuthentication yes/g'
+sed -i 's/PasswordAuthentication no/PasswordAuthentication yes/g' /etc/ssh/sshd_config
 cat <<EOF >>/etc/ssh/sshd_config
 PermitRootLogin yes
 AddressFamily any
