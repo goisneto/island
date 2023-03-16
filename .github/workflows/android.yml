@@ -142,7 +142,7 @@ jobs:
             eval "${DEBUGSRV_ENV[@]}" &> /dev/null
             if [ -n "${DEBUGSRV_ENV_VARS[@]}" ]; then
                  write-host echo "DEBUGSRV_ENV_VARS=( ""${DEBUGSRV_ENV_VARS[@]}"" )"
-                 export "${DEBUGSRV_ENV_VARS[@]}" &> /dev/null
+                 eval "export ""${DEBUGSRV_ENV_VARS[@]}" &> /dev/null
             fi
         fi
         if [ -n "${DEBUGSRV}" ] && [ -f "${DEBUGSRV}" ]; then
