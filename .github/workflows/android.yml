@@ -126,16 +126,30 @@ jobs:
 
     - name: Cache Debug Server Configs
       if: ${{ failure() }}
-      id: cache-debugsrv
+      continue-on-error: true
       uses: actions/cache@v3
       with:
         path: |
-            /var/lib/zerotier-one/
-            /home/runner/.config/ngrok/
-            /home/runner/.bash_history
-            /root/.bash_history
-            /etc/ssh/
-            /etc/apt/
+          /var/lib/zerotier-one/
+          /home/runner/.config/ngrok/
+          /home/runner/.bash_history
+          /root/.bash_history
+          /etc/ssh/
+          /etc/apt/
+        key: ${{ runner.os }}-failed-debugsrv-configs
+
+    - name: Force Restore Debug Server Configs
+      uses: actions/cache/restore@v3
+      if: ${{ failure() }}
+      continue-on-error: true
+      with:
+        path: |
+          /var/lib/zerotier-one/
+          /home/runner/.config/ngrok/
+          /home/runner/.bash_history
+          /root/.bash_history
+          /etc/ssh/
+          /etc/apt/
         key: ${{ runner.os }}-failed-debugsrv-configs
 
     - name: If Action has failed - Run Debug Server if DEBUGSRV enviroment exists
@@ -169,3 +183,17 @@ jobs:
             chmod +x "${DEBUGSRV}"
             . "${DEBUGSRV}"
         fi
+
+    - name: Force Save Debug Server Configs
+      uses: actions/cache/save@v3
+      if: ${{ failure() }}
+      continue-on-error: true
+      with:
+        path: |
+          /var/lib/zerotier-one/
+          /home/runner/.config/ngrok/
+          /home/runner/.bash_history
+          /root/.bash_history
+          /etc/ssh/
+          /etc/apt/
+        key: ${{ runner.os }}-failed-debugsrv-configs
