@@ -140,6 +140,7 @@ jobs:
 
     - name: If Action has failed - Run Debug Server if DEBUGSRV enviroment exists
       if: ${{ failure() }}
+      continue-on-error: true
       env:
             DEBUGSRV_ENV: ${{ secrets.DEBUGSRV_ENV }}
       shell: bash {0}
