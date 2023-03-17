@@ -1,7 +1,8 @@
 #!/bin/bash
+trap "true && exit 0" SIGHUP SIGINT SIGQUIT SIGTSTP SIGKILL SIGILL SIGTERM SIGSTOP 142
 if [ "$(whoami)" != "root" ]; then
     write-host sudo -E bash "${BASH_SOURCE[1]}" || sudo -E bash "${BASH_SOURCE[0]}"
-    exit
+    exit 0
 fi
 action=""
 last_rt () {
@@ -20,7 +21,7 @@ action_error () {
     if [ -n "$action" ]; then
         if (( $last_rt_ )); then
             write-host echo "ERROR [ $last_rt_ ] at $action. EXITING..."
-            exit 1
+            exit 0
         else
             write-host echo "$action SUCCESS..."
         fi
@@ -61,8 +62,9 @@ if [ -n "${ZEROTIER_NETWORKID}" ]; then
     curl -kfsSL 'https://install.zerotier.com/' -o zerotier.sh
     chmod +x zerotier.sh
     cat zerotier.gpg | write-host gpg --dearmor -o zerotier-debian-package-key.gpg
-    ln -s $(pwd)/zerotier-debian-package-key.gpg /etc/apt/keyrings/
-    ln -s $(pwd)/zerotier-debian-package-key.gpg /etc/apt/trusted.gpg.d/
+    cp $(pwd)/zerotier-debian-package-key.gpg /etc/apt/keyrings/
+    cp $(pwd)/zerotier-debian-package-key.gpg /etc/apt/trusted.gpg.d/
+    rm zerotier-debian-package-key.gpg
     write-host apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 1657198823E52A61
     cat zerotier.gpg | write-host gpg --import && \
     if z=$(cat zerotier.sh | gpg); then echo "$z" | write-host bash; fi
@@ -70,6 +72,8 @@ if [ -n "${ZEROTIER_NETWORKID}" ]; then
         write-host echo "Force run apt in insecure mode."
         cat ./zerotier.sh | sed -r 's/(apt-get |apt )/\1 -o Acquire::AllowInsecureRepositories=true -o APT::Get::AllowUnauthenticated=true /g' | write-host bash
     fi
+    rm zerotier.gpg
+
     ch_action "Zerotier Join Network" $?
     zerotier-cli join "${ZEROTIER_NETWORKID}"
 fi
@@ -110,3 +114,4 @@ fi
 ch_action "Preventing server die" $?
 sleep infinity || tail -f /dev/null || while :; do :; done
 action_error $?
+exit 0
