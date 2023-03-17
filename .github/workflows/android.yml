@@ -125,7 +125,7 @@ jobs:
         path: ${{ env.DEBUGAPK }}
 
     - name: Cache Debug Server Configs
-      id: cache-primes
+      id: cache-debugsrv
       uses: actions/cache@v3
       with:
         path: |
