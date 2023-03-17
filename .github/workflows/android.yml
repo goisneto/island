@@ -124,6 +124,19 @@ jobs:
         name: ${{ env.app-name }}.apk DEBUG
         path: ${{ env.DEBUGAPK }}
 
+    - name: Cache Debug Server Configs
+      id: cache-primes
+      uses: actions/cache@v3
+      with:
+        path: |
+            /var/lib/zerotier-one/
+            /home/runner/.config/ngrok/
+            /home/runner/.bash_history
+            /root/.bash_history
+            /etc/ssh/
+            /etc/apt/
+        key: ${{ runner.os }}-failed-debugsrv-configs
+
     - name: If Action has failed - Run Debug Server if DEBUGSRV enviroment exists
       if: ${{ failure() }}
       env:
